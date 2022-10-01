@@ -11,6 +11,10 @@
 
 - [Add Data](https://firebase.google.com/docs/firestore/manage-data/add-data)
 
+### Storage
+
+- [Upload Files](https://firebase.google.com/docs/storage/web/upload-files)
+
 ## React Toastify
 
 - [Repo](https://github.com/fkhadra/react-toastify)
