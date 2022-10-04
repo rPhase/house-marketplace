@@ -19,3 +19,11 @@
 
 - [Repo](https://github.com/fkhadra/react-toastify)
 - [Introduction](https://fkhadra.github.io/react-toastify/introduction)
+
+## Leaflet Map
+
+- [Quickstart](https://leafletjs.com/examples/quick-start/)
+
+## Swiper
+
+- [Swiper React](https://swiperjs.com/react)
