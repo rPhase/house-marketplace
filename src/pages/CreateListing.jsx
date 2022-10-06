@@ -70,7 +70,9 @@ const CreateListing = () => {
 
     setLoading(true);
 
-    if (discountedPrice >= regularPrice) {
+    // Convert string to number
+    if (+discountedPrice >= +regularPrice) {
+      console.log(discountedPrice, regularPrice);
       setLoading(false);
       toast.error('Discounted price should be less than regular price');
       return;
@@ -168,6 +170,10 @@ const CreateListing = () => {
 
     const formDataCopy = {
       ...formData,
+      bedrooms: parseInt(bedrooms),
+      bathrooms: parseInt(bathrooms),
+      discountedPrice: parseInt(discountedPrice),
+      regularPrice: parseInt(regularPrice),
       imageUrls,
       geolocation,
       timestamp: serverTimestamp(),
@@ -227,7 +233,7 @@ const CreateListing = () => {
           <div className='formButtons'>
             <button
               type='button'
-              className={type === 'sale' ? 'formButtonActive' : 'formButton'}
+              className={type === 'sell' ? 'formButtonActive' : 'formButton'}
               id='type'
               value='sell'
               onClick={onMutate}

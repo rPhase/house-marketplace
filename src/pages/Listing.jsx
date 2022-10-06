@@ -90,7 +90,11 @@ const Listing = () => {
         <p className='listingType'>For {categoryTitle}</p>
         {listing.offer && (
           <p className='discountPrice'>
-            ${listing.regularPrice - listing.discountedPrice} discount
+            $
+            {(listing.regularPrice - listing.discountedPrice).toLocaleString(
+              'en-US'
+            )}{' '}
+            discount
           </p>
         )}
 
