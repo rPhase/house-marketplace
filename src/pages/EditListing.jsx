@@ -6,12 +6,13 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from 'firebase/storage';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase.config';
 import Spinner from '../components/Spinner';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { v4 as uuidv4 } from 'uuid';
+import { useParams } from 'react-router-dom';
 
 const initialFormState = {
   type: 'rent',
@@ -29,9 +30,10 @@ const initialFormState = {
   longitude: 0,
 };
 
-const CreateListing = () => {
+const EditListing = () => {
   const geolocationEnabled = useState(true)[0];
   const [formData, setFormData] = useState(initialFormState);
+  const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const {
@@ -52,7 +54,35 @@ const CreateListing = () => {
 
   const auth = getAuth();
   const navigate = useNavigate();
+  const params = useParams();
 
+  // Fetch listing to edit
+  useEffect(() => {
+    setLoading(true);
+    const fetchListing = async () => {
+      const docRef = doc(db, 'listings', params.listingId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setListing(docSnap.data());
+        setFormData({ ...docSnap.data(), address: docSnap.data().location });
+        setLoading(false);
+      } else {
+        navigate('/');
+        toast.error('Listing does not exist');
+      }
+    };
+    fetchListing();
+  }, [params.listingId, navigate]);
+
+  // Redirect if listing is not users
+  useEffect(() => {
+    if (listing && listing.userRef !== auth.currentUser.uid) {
+      toast.error('You can not edit this listing');
+      navigate('/');
+    }
+  }, [navigate, auth.currentUser.uid, listing]);
+
+  // Sets userRef to logged in user
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -72,13 +102,12 @@ const CreateListing = () => {
 
     // Convert string to number
     if (+discountedPrice >= +regularPrice) {
-      console.log(discountedPrice, regularPrice);
       setLoading(false);
       toast.error('Discounted price should be less than regular price');
       return;
     }
 
-    if (images.length > 6) {
+    if (images?.length > 6) {
       setLoading(false);
       toast.error('Max 6 images');
       return;
@@ -101,8 +130,6 @@ const CreateListing = () => {
       } else {
         location = data.results[0]?.formatted_address;
       }
-
-      console.log(location);
 
       if (location === undefined || location.includes('undefined')) {
         setLoading(false);
@@ -162,13 +189,16 @@ const CreateListing = () => {
       });
     };
 
-    const imageUrls = await Promise.all(
-      [...images].map((image) => storeImage(image))
-    ).catch(() => {
-      setLoading(false);
-      toast.error('Images not uploaded');
-      return;
-    });
+    let imageUrls = null;
+    if (images) {
+      imageUrls = await Promise.all(
+        [...images].map((image) => storeImage(image))
+      ).catch(() => {
+        setLoading(false);
+        toast.error('Images not uploaded');
+        return;
+      });
+    }
 
     const formDataCopy = {
       ...formData,
@@ -176,17 +206,19 @@ const CreateListing = () => {
       bathrooms: parseInt(bathrooms),
       discountedPrice: parseInt(discountedPrice),
       regularPrice: parseInt(regularPrice),
-      imageUrls,
       geolocation,
       timestamp: serverTimestamp(),
     };
     delete formDataCopy.images;
     delete formDataCopy.address;
     location && (formDataCopy.location = location);
+    imageUrls && (formDataCopy.imageUrls = imageUrls);
 
     !formDataCopy.offer && delete formDataCopy.discountedPrice;
 
-    const docRef = await addDoc(collection(db, 'listings'), formDataCopy);
+    // Update Listing
+    const docRef = doc(db, 'listings', params.listingId);
+    await updateDoc(docRef, formDataCopy);
 
     setLoading(false);
     toast.success('Listing saved');
@@ -226,7 +258,7 @@ const CreateListing = () => {
   return (
     <div className='profile'>
       <header>
-        <p className='pageHeader'>Create a Listing</p>
+        <p className='pageHeader'>Edit Listing</p>
       </header>
       <main>
         <form onSubmit={onSubmitHandler}>
@@ -451,10 +483,10 @@ const CreateListing = () => {
             max='6'
             accept='.jpg,.png,.jpeg'
             multiple
-            required
+            // required
           />
           <button type='submit' className='primaryButton createListingButton'>
-            Create Listing
+            Edit Listing
           </button>
         </form>
       </main>
@@ -462,4 +494,4 @@ const CreateListing = () => {
   );
 };
 
-export default CreateListing;
+export default EditListing;
